@@ -138,7 +138,13 @@ textarea.input { min-height: 96px; resize: vertical; }
   .btn-xl { padding: 14px 28px; font-size: 16px; }
   .section { padding: 40px 0; }
   .section-sm { padding: 24px 0; }
+  /* Cabinet cards stack on mobile */
+  .card { padding: 20px 16px; }
+  /* Tables scroll horizontally */
+  .tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 }
 @media (max-width: 480px) {
   .wrap, .wrap-sm, .wrap-md { padding: 0 12px; }
+  .btn { padding: 11px 18px; font-size: 14px; }
+  .btn-sm { padding: 7px 14px; font-size: 13px; }
 }

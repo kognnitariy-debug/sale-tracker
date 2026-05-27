@@ -25,8 +25,7 @@ export default function Landing() {
             Ваш товар — <span style={{ color: 'var(--primary)' }}>в крупнейшие<br/>сети России</span>
           </h1>
           <p style={s.heroSub}>
-            Sale Tracker — платформа, которая с помощью ИИ, рекомендательных технологий<br/>
-            и живых переговоров доводит вашу продукцию до полки в торговых сетях.
+            Sale Tracker — платформа, которая с помощью ИИ, рекомендательных технологий и живых переговоров доводит вашу продукцию до полки в торговых сетях.
           </p>
 
           {/* Path cards */}
@@ -138,7 +137,7 @@ export default function Landing() {
       <footer style={s.footer}>
         <div className="wrap" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
           <span style={{ fontWeight: 700, color: 'var(--primary)' }}>Sale Tracker</span>
-          <span style={{ color: 'var(--text-4)', fontSize: 14 }}>© 2025 Sale Tracker. Все права защищены.</span>
+          <span style={{ color: 'var(--text-4)', fontSize: 14 }}>© 2026 Sale Tracker. Все права защищены.</span>
         </div>
       </footer>
     </div>

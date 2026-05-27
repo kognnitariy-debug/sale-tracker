@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useUser } from '../context/UserContext'
 import { PLAN_META, PLAN_ORDER } from '../data/plans'
@@ -8,6 +8,16 @@ import Negotiations from './cabinet/Negotiations'
 import Promo from './cabinet/Promo'
 import Analytics from './cabinet/Analytics'
 import { Company, Team, Learning } from './cabinet/Secondary'
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
+  useEffect(() => {
+    const fn = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', fn)
+    return () => window.removeEventListener('resize', fn)
+  }, [])
+  return isMobile
+}
 
 const NAV = [
   { id: 'overview',      icon: '🏠', label: 'Обзор',                 group: 'main'   },
@@ -36,7 +46,7 @@ const SECTION_TITLES = {
 function PlanSwitcher({ active, userPlan, onChange }) {
   return (
     <div style={ss.switcherBar}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflowX: 'auto', WebkitOverflowScrolling: 'touch', flexShrink: 0, minWidth: 0 }}>
         <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,.6)', whiteSpace: 'nowrap' }}>
           👁 ПРЕДПРОСМОТР ТАРИФА:
         </span>
@@ -78,15 +88,19 @@ function PlanSwitcher({ active, userPlan, onChange }) {
   )
 }
 
-function Sidebar({ active, onNav, planId, userPlan }) {
+function Sidebar({ active, onNav, planId, userPlan, onClose, isMobile }) {
   const navigate = useNavigate()
   const plan = PLAN_META[planId]
-  const userPlanMeta = PLAN_META[userPlan]
   const nextPlan = plan.next ? PLAN_META[plan.next] : null
   const [collapsed, setCollapsed] = useState(false)
 
+  function handleNav(id) {
+    onNav(id)
+    if (isMobile && onClose) onClose()
+  }
+
   return (
-    <aside style={{ ...ss.sidebar, width: collapsed ? 60 : 220 }}>
+    <aside style={{ ...ss.sidebar, width: isMobile ? 260 : collapsed ? 60 : 220 }}>
       {/* Logo */}
       <div style={ss.sidebarLogo} onClick={() => navigate('/')}>
         <div style={ss.logoIcon}>
@@ -117,11 +131,11 @@ function Sidebar({ active, onNav, planId, userPlan }) {
       {/* Nav */}
       <nav style={{ flex: 1, overflowY: 'auto', padding: '0 8px' }}>
         {NAV.filter(n => n.group === 'main').map(item => (
-          <NavItem key={item.id} item={item} active={active} onNav={onNav} collapsed={collapsed} />
+          <NavItem key={item.id} item={item} active={active} onNav={handleNav} collapsed={collapsed && !isMobile} />
         ))}
         <div className="divider" style={{ margin: '8px 4px' }} />
         {NAV.filter(n => n.group === 'bottom').map(item => (
-          <NavItem key={item.id} item={item} active={active} onNav={onNav} collapsed={collapsed} />
+          <NavItem key={item.id} item={item} active={active} onNav={handleNav} collapsed={collapsed && !isMobile} />
         ))}
       </nav>
 
@@ -145,13 +159,15 @@ function Sidebar({ active, onNav, planId, userPlan }) {
         </div>
       )}
 
-      {/* Collapse toggle */}
-      <button
-        onClick={() => setCollapsed(v => !v)}
-        style={{ position: 'absolute', right: -12, top: 80, width: 24, height: 24, borderRadius: '50%', background: '#fff', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, color: 'var(--text-3)', boxShadow: 'var(--shadow-sm)', zIndex: 10 }}
-      >
-        {collapsed ? '›' : '‹'}
-      </button>
+      {/* Collapse toggle — desktop only */}
+      {!isMobile && (
+        <button
+          onClick={() => setCollapsed(v => !v)}
+          style={{ position: 'absolute', right: -12, top: 80, width: 24, height: 24, borderRadius: '50%', background: '#fff', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, color: 'var(--text-3)', boxShadow: 'var(--shadow-sm)', zIndex: 10 }}
+        >
+          {collapsed ? '›' : '‹'}
+        </button>
+      )}
     </aside>
   )
 }
@@ -231,8 +247,11 @@ export default function Cabinet() {
   const { user, plan: userPlan } = useUser()
   const [previewPlan, setPreviewPlan] = useState(userPlan || 'free')
   const [activeSection, setActiveSection] = useState('overview')
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const isMobile = useIsMobile()
 
   useEffect(() => { setPreviewPlan(userPlan || 'free') }, [userPlan])
+  useEffect(() => { if (!isMobile) setMobileMenuOpen(false) }, [isMobile])
 
   const activePlan = previewPlan
 
@@ -261,33 +280,60 @@ export default function Cabinet() {
       />
 
       <div style={{ display: 'flex', flex: 1, position: 'relative' }}>
+        {/* Mobile overlay */}
+        {isMobile && mobileMenuOpen && (
+          <div
+            onClick={() => setMobileMenuOpen(false)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', zIndex: 149 }}
+          />
+        )}
+
         {/* Sidebar */}
-        <Sidebar
-          active={activeSection}
-          onNav={setActiveSection}
-          planId={activePlan}
-          userPlan={userPlan || 'free'}
-        />
+        {(!isMobile || mobileMenuOpen) && (
+          <div style={isMobile ? { position: 'fixed', left: 0, top: 0, bottom: 0, zIndex: 150, display: 'flex' } : {}}>
+            <Sidebar
+              active={activeSection}
+              onNav={setActiveSection}
+              planId={activePlan}
+              userPlan={userPlan || 'free'}
+              isMobile={isMobile}
+              onClose={() => setMobileMenuOpen(false)}
+            />
+          </div>
+        )}
 
         {/* Main content */}
         <main style={{ flex: 1, overflowX: 'hidden', minWidth: 0 }}>
           {/* Top bar */}
           <div style={ss.topBar}>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 18 }}>{SECTION_TITLES[activeSection]}</div>
-              <div style={{ fontSize: 12, color: 'var(--text-3)' }}>
-                ООО Агро-Молоко ·{' '}
-                <span style={{ color: PLAN_META[activePlan].color, fontWeight: 600 }}>
-                  {PLAN_META[activePlan].label}
-                </span>
-                {previewPlan !== (userPlan || 'free') && (
-                  <span style={{ color: '#F59E0B', marginLeft: 8 }}>👁 Режим предпросмотра</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {isMobile && (
+                <button
+                  onClick={() => setMobileMenuOpen(v => !v)}
+                  style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', padding: '4px 6px', color: 'var(--text)', lineHeight: 1 }}
+                  aria-label="Открыть меню"
+                >
+                  ☰
+                </button>
+              )}
+              <div>
+                <div style={{ fontWeight: 700, fontSize: isMobile ? 15 : 18 }}>{SECTION_TITLES[activeSection]}</div>
+                {!isMobile && (
+                  <div style={{ fontSize: 12, color: 'var(--text-3)' }}>
+                    ООО Агро-Молоко ·{' '}
+                    <span style={{ color: PLAN_META[activePlan].color, fontWeight: 600 }}>
+                      {PLAN_META[activePlan].label}
+                    </span>
+                    {previewPlan !== (userPlan || 'free') && (
+                      <span style={{ color: '#F59E0B', marginLeft: 8 }}>👁 Режим предпросмотра</span>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               {/* Next step nudge */}
-              {PLAN_META[activePlan].next && previewPlan === (userPlan || 'free') && (
+              {!isMobile && PLAN_META[activePlan].next && previewPlan === (userPlan || 'free') && (
                 <button
                   className="btn btn-sm"
                   style={{ background: PLAN_META[PLAN_META[activePlan].next].color, color: '#fff', border: 'none', fontSize: 12 }}
@@ -296,12 +342,12 @@ export default function Cabinet() {
                   🔥 Перейти на {PLAN_META[PLAN_META[activePlan].next].label}
                 </button>
               )}
-              <button className="btn btn-ghost btn-sm" onClick={() => navigate('/dashboard')}>← Выход</button>
+              <button className="btn btn-ghost btn-sm" style={{ fontSize: isMobile ? 12 : 14 }} onClick={() => navigate('/dashboard')}>← Выход</button>
             </div>
           </div>
 
           {/* Section content */}
-          <div style={{ padding: '20px 24px 48px' }}>
+          <div style={{ padding: isMobile ? '16px 12px 48px' : '20px 24px 48px' }}>
             {renderSection()}
           </div>
         </main>

@@ -41,7 +41,7 @@ function MetricRow({ label, value, locked, lockPlan }) {
 }
 
 function UpgradeCard({ planId }) {
-  const nudge = NUDGES.product[planId] || NUDGES.negotiations[planId]
+  const nudge = NUDGES.product[planId] || NUDGES.communications[planId]
   const next = PLAN_META[PLAN_META[planId]?.next]
   if (!next || !nudge) return null
 
@@ -119,8 +119,8 @@ export default function Overview({ planId, onNav }) {
         {/* Взаимодействие */}
         <PrimaryCard icon="🤝" title="Переговоры" color="#3B82F6" onOpen={() => onNav('negotiations')}>
           <MetricRow label="Активных переговоров" value={MOCK.negotiations.length} />
-          <MetricRow label="Рассылок в месяц" value={inter.mailings > 0 ? `${inter.mailings} шт` : 'Недоступно'} locked={inter.mailings === 0} lockPlan="Онлайн продавец" />
-          <MetricRow label="Zoom-встреч" value={inter.zoom === 'unlimited' ? '∞' : inter.zoom || '—'} locked={!inter.zoom} lockPlan="Онлайн продавец" />
+          <MetricRow label="Рассылок в месяц" value={inter.mailings === 999 ? 'Безлимит' : inter.mailings > 0 ? `${inter.mailings} шт` : 'Недоступно'} locked={inter.mailings === 0} lockPlan="Онлайн продавец" />
+          <MetricRow label="Zoom-встреч" value={inter.zoom === 999 ? 'Безлимит' : inter.zoom > 0 ? `${inter.zoom} в мес.` : '—'} locked={!inter.zoom} lockPlan="Сетевой отдел" />
           <MetricRow label="Автопуш закупщикам" value="✓ Авто" locked={!inter.autoPush} lockPlan="Сетевой отдел" />
           <MetricRow label="Персональный менеджер" value="✓ Назначен" locked={!inter.manager} lockPlan="Офис продаж" />
         </PrimaryCard>
@@ -128,7 +128,7 @@ export default function Overview({ planId, onNav }) {
         {/* Аналитика */}
         <PrimaryCard icon="📊" title="Аналитика" color="#8B5CF6" onOpen={() => onNav('analytics')}>
           <MetricRow label="Данные по рынку" value={anal.level === 'general' ? 'Общие' : anal.level === 'categories' ? 'По категориям' : 'Детальные'} />
-          <MetricRow label="ИИ-скоринг продукта" value="62 / 100" locked={!anal.scoring} lockPlan="Онлайн продавец" />
+          <MetricRow label="ИИ-скоринг продукта" value="62 / 100" locked={!anal.scoring} lockPlan="Сетевой отдел" />
           <MetricRow label="Дашборд воронки" value="✓ Доступен" locked={!anal.dashboard} lockPlan="Сетевой отдел" />
           <MetricRow label="Анализ переговоров" value="✓ Доступен" locked={!anal.analysis} lockPlan="Сетевой отдел" />
         </PrimaryCard>
@@ -162,8 +162,8 @@ export default function Overview({ planId, onNav }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
         {[
           { id: 'company', icon: '🏢', title: 'Компания', info: `Статус: ${FEATURES.company[planId].verified ? '✓ Верифицирован' : '✗ Не верифицирован'}` },
-          { id: 'team', icon: '👤', title: 'Команда', info: `${MOCK.team.length} / ${FEATURES.team[planId].accounts} аккаунтов` },
-          { id: 'learning', icon: '🎓', title: 'Обучение', info: FEATURES.learning[planId].aiTrainer ? 'ИИ-тренажёр доступен' : 'Только база знаний' },
+          { id: 'team', icon: '👤', title: 'Команда', info: `${Math.min(MOCK.team.length, FEATURES.team[planId].accounts)} / ${FEATURES.team[planId].accounts} аккаунтов` },
+          { id: 'learning', icon: '🎓', title: 'Обучение', info: FEATURES.learning[planId].aiTrainer === true || FEATURES.learning[planId].aiTrainer === 'mentor' ? 'ИИ-тренажёр доступен' : 'Только база знаний' },
         ].map(s => (
           <div
             key={s.id}
