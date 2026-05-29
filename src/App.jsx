@@ -10,6 +10,7 @@ import Payment from './pages/Payment'
 import PaymentSuccess from './pages/PaymentSuccess'
 import Cabinet from './pages/Cabinet'
 import BuyerCabinet from './pages/BuyerCabinet'
+import BuyerRegister from './pages/BuyerRegister'
 
 export default function App() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
           <Route path="/payment/success" element={<PaymentSuccess />} />
           <Route path="/cabinet" element={<Cabinet />} />
           <Route path="/buyer" element={<BuyerCabinet />} />
+          <Route path="/buyer-register" element={<BuyerRegister />} />
         </Routes>
       </MessagingProvider>
     </UserProvider>

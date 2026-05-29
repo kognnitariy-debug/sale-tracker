@@ -55,7 +55,7 @@ export default function Landing() {
             <div
               className="card card-hover"
               style={{ ...s.pathCard, borderColor: '#3B82F6', borderWidth: 2 }}
-              onClick={() => navigate('/buyer')}
+              onClick={() => navigate('/buyer-register')}
             >
               <div style={s.pathEmoji}>🛒</div>
               <h3 style={{ fontSize: 22, fontWeight: 700, marginBottom: 10 }}>Я торговая сеть</h3>
@@ -70,7 +70,7 @@ export default function Landing() {
                 ))}
               </div>
               <button className="btn btn-block" style={{ marginTop: 24, background: '#3B82F6', color: '#fff', border: 'none' }}>
-                Войти в кабинет закупщика →
+                Зарегистрироваться →
               </button>
             </div>
           </div>
