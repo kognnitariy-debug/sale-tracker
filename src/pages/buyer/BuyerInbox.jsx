@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMessaging } from '../../context/MessagingContext'
-import { SUPPLIERS } from '../../data/accounts'
+import { SUPPLIERS, BUYERS } from '../../data/accounts'
 
 const STATUS = {
   new:     { label: 'Новое',     color: '#EF4444', bg: '#FEF2F2' },
@@ -10,14 +10,21 @@ const STATUS = {
   rejected:{ label: 'Отклонено',color: '#6B7280', bg: '#F3F4F6' },
 }
 
-function MsgCard({ msg, onUpdateStatus }) {
+function MsgCard({ msg, buyerId, onUpdateStatus, onSendZoom }) {
   const [open, setOpen] = useState(msg.status === 'new')
+  const [zoomSent, setZoomSent] = useState(false)
   const supplier = SUPPLIERS.find(s => s.id === msg.from)
   const st = STATUS[msg.status] || STATUS.new
 
   function handleOpen() {
     setOpen(v => !v)
     if (msg.status === 'new') onUpdateStatus(msg.id, 'read')
+  }
+
+  function handleZoom() {
+    onUpdateStatus(msg.id, 'replied')
+    onSendZoom(msg)
+    setZoomSent(true)
   }
 
   return (
@@ -77,9 +84,10 @@ function MsgCard({ msg, onUpdateStatus }) {
               <button
                 className="btn btn-sm"
                 style={{ background: '#EFF6FF', color: '#1E40AF', border: '1px solid #BFDBFE' }}
-                onClick={() => onUpdateStatus(msg.id, 'replied')}
+                onClick={handleZoom}
+                disabled={zoomSent}
               >
-                💬 Запросить Zoom
+                🎥 {zoomSent ? 'Zoom запрошен ✓' : 'Запросить Zoom'}
               </button>
               <button
                 className="btn btn-ghost btn-sm"
@@ -92,7 +100,11 @@ function MsgCard({ msg, onUpdateStatus }) {
           {(msg.status === 'accepted' || msg.status === 'replied') && (
             <div className="alert alert-success" style={{ marginTop: 0 }}>
               <span className="alert-icon">✅</span>
-              <span>{msg.status === 'accepted' ? 'КП принято. Поставщику отправлено уведомление.' : 'Запрос на Zoom отправлен поставщику.'}</span>
+              <span>
+                {msg.status === 'accepted'
+                  ? 'КП принято. Поставщику отправлено уведомление.'
+                  : `Запрос на Zoom отправлен ${supplier?.name}. Уведомление появится в разделе «Входящие запросы от сетей» в кабинете поставщика.`}
+              </span>
             </div>
           )}
           {msg.status === 'rejected' && (
@@ -108,9 +120,23 @@ function MsgCard({ msg, onUpdateStatus }) {
 }
 
 export default function BuyerInbox({ buyerId }) {
-  const { getInbox, updateStatus } = useMessaging()
+  const { getInbox, updateStatus, sendMessage } = useMessaging()
   const inbox = getInbox(buyerId)
   const [filter, setFilter] = useState('all')
+  const buyer = BUYERS.find(b => b.id === buyerId)
+
+  function handleSendZoom(msg) {
+    sendMessage({
+      from: buyerId,
+      to: msg.from,
+      type: 'zoom_request',
+      subject: `Запрос Zoom-встречи: ${msg.productName}`,
+      productName: msg.productName,
+      category: msg.category,
+      body: `${buyer?.name} (${buyer?.stores?.toLocaleString()} магазинов) хочет назначить Zoom-встречу по вашему КП на "${msg.productName}". Контакт: ${buyer?.contact}.`,
+      urgent: true,
+    })
+  }
 
   const filtered = filter === 'all' ? inbox : inbox.filter(m => m.status === filter)
   const newCount = inbox.filter(m => m.status === 'new').length
@@ -157,7 +183,7 @@ export default function BuyerInbox({ buyerId }) {
         </div>
       ) : (
         filtered.map(msg => (
-          <MsgCard key={msg.id} msg={msg} onUpdateStatus={updateStatus} />
+          <MsgCard key={msg.id} msg={msg} buyerId={buyerId} onUpdateStatus={updateStatus} onSendZoom={handleSendZoom} />
         ))
       )}
     </div>

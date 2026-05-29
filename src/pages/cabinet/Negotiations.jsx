@@ -141,6 +141,9 @@ export default function Negotiations({ planId }) {
   const [selectedNeg, setSelectedNeg] = useState(null)
   const [showMailing, setShowMailing] = useState(false)
   const [showSendKp, setShowSendKp] = useState(false)
+  const { getInbox } = useMessaging()
+
+  const realIncoming = getInbox('s1').filter(m => m.type === 'zoom_request')
 
   const mailingsLabel = f.mailings === 999 ? 'безлимит' : f.mailings > 0 ? `до ${f.mailings}` : null
   const kpLabel = f.kpMonth === 999 ? 'безлимит' : f.kpMonth > 0 ? `до ${f.kpMonth}` : null
@@ -262,12 +265,38 @@ export default function Negotiations({ planId }) {
                 : 'Безлимит + ИИ-рекомендация приоритетных запросов'}
             </div>
           </div>
-          {INCOMING_REQUESTS.length > 0 && (
+          {(realIncoming.length + INCOMING_REQUESTS.length) > 0 && (
             <span style={{ fontSize: 12, fontWeight: 700, color: '#EF4444', background: '#FEF2F2', padding: '3px 10px', borderRadius: 100 }}>
-              {INCOMING_REQUESTS.length} новых
+              🔴 {realIncoming.length + INCOMING_REQUESTS.length} новых
             </span>
           )}
         </div>
+
+        {/* Real zoom requests from buyers */}
+        {realIncoming.map(msg => {
+          const buyerName = BUYERS.find(b => b.id === msg.from)?.name || msg.from
+          return (
+            <div key={msg.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '14px', marginBottom: 8, borderRadius: 'var(--r-sm)', background: '#FFF7ED', border: '1px solid #FED7AA' }}>
+              <span style={{ fontSize: 22, flexShrink: 0 }}>🎥</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 2 }}>
+                  {buyerName} — Запрос Zoom-встречи
+                  <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 700, color: '#EA580C', background: '#FED7AA', padding: '1px 7px', borderRadius: 100 }}>Срочно</span>
+                </div>
+                <div style={{ fontSize: 13, color: 'var(--text-2)', marginBottom: 6 }}>{msg.body}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-4)' }}>{msg.date} · {msg.category}</div>
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                <button className="btn btn-sm" style={{ background: '#EA580C', color: '#fff', border: 'none' }}
+                  onClick={() => alert('Форма выбора времени Zoom-встречи откроется здесь')}>
+                  Назначить Zoom →
+                </button>
+              </div>
+            </div>
+          )
+        })}
+
+        {/* Static mock requests */}
         {INCOMING_REQUESTS.map(r => (
           <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
             <div style={{ width: 10, height: 10, borderRadius: '50%', background: r.urgent ? '#EF4444' : '#F59E0B', flexShrink: 0 }} />
@@ -282,7 +311,11 @@ export default function Negotiations({ planId }) {
             </div>
           </div>
         ))}
-        <div style={{ padding: '12px 0', color: 'var(--text-4)', fontSize: 13 }}>+ Новые запросы появятся здесь автоматически</div>
+
+        {realIncoming.length === 0 && INCOMING_REQUESTS.length === 0 && (
+          <div style={{ padding: '12px 0', color: 'var(--text-4)', fontSize: 13 }}>Запросов пока нет</div>
+        )}
+        <div style={{ padding: '8px 0', color: 'var(--text-4)', fontSize: 12 }}>+ Новые запросы появляются здесь автоматически</div>
       </div>
 
       {/* Negotiations list */}
