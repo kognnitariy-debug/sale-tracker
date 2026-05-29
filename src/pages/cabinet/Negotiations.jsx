@@ -1,6 +1,98 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FEATURES, NUDGES, PLAN_META, MOCK } from '../../data/plans'
+import { BUYERS, SUPPLIERS } from '../../data/accounts'
+import { useMessaging } from '../../context/MessagingContext'
+
+function SendKpModal({ onClose, planId }) {
+  const { sendMessage } = useMessaging()
+  const supplier = SUPPLIERS[0]
+  const [form, setForm] = useState({ to: 'b1', productName: '', category: 'Молочная продукция', price: '', quantum: '', rrc: false, body: '' })
+  const [sent, setSent] = useState(false)
+  const locked = planId === 'free'
+
+  function set(k, v) { setForm(p => ({ ...p, [k]: v })) }
+
+  function handleSend() {
+    sendMessage({
+      from: 's1',
+      to: form.to,
+      type: 'kp',
+      subject: `КП — ${form.productName}`,
+      productName: form.productName,
+      category: form.category,
+      price: form.price,
+      quantum: form.quantum,
+      rrc: form.rrc,
+      region: supplier.region,
+      segment: supplier.segment,
+      body: form.body || `Здравствуйте! ${supplier.name} предлагает ${form.productName}. Готовы обсудить условия поставки.`,
+    })
+    setSent(true)
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div style={{ background: '#fff', borderRadius: 'var(--r-lg)', padding: '28px', width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <div style={{ fontWeight: 700, fontSize: 18 }}>Отправить КП в сеть</div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--text-3)' }}>✕</button>
+        </div>
+
+        {locked ? (
+          <div className="alert alert-warning">
+            <span className="alert-icon">🔒</span>
+            <div>Отправка КП доступна с тарифа <strong>Онлайн продавец</strong>. Обновитесь чтобы начать работать с сетями.</div>
+          </div>
+        ) : sent ? (
+          <div style={{ textAlign: 'center', padding: '24px 0' }}>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
+            <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 8 }}>КП отправлено!</div>
+            <div style={{ color: 'var(--text-3)', fontSize: 14, marginBottom: 20 }}>
+              Закупщик {BUYERS.find(b => b.id === form.to)?.name} получил ваше предложение и увидит его во Входящих.
+            </div>
+            <button className="btn btn-primary" onClick={onClose}>Готово</button>
+          </div>
+        ) : (
+          <>
+            <div className="form-group">
+              <label className="label">Сеть-получатель</label>
+              <select className="input" value={form.to} onChange={e => set('to', e.target.value)}>
+                {BUYERS.map(b => <option key={b.id} value={b.id}>{b.logo} {b.name} ({b.stores.toLocaleString()} маг.)</option>)}
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="label">Наименование продукта <span className="req">*</span></label>
+              <input className="input" placeholder="Например: Молоко пастеризованное 3.2%, 1л" value={form.productName} onChange={e => set('productName', e.target.value)} />
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="label">Цена</label>
+                <input className="input" placeholder="65 ₽/л" value={form.price} onChange={e => set('price', e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label className="label">Квант поставки</label>
+                <input className="input" placeholder="500 кг" value={form.quantum} onChange={e => set('quantum', e.target.value)} />
+              </div>
+            </div>
+            <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <input type="checkbox" id="kp_rrc" checked={form.rrc} onChange={e => set('rrc', e.target.checked)} style={{ width: 16, height: 16 }} />
+              <label htmlFor="kp_rrc" style={{ fontSize: 14, cursor: 'pointer' }}>Возможна доставка на РРЦ</label>
+            </div>
+            <div className="form-group">
+              <label className="label">Сопроводительное письмо</label>
+              <textarea className="input" rows={3} placeholder="Расскажите о вашем продукте и условиях..." value={form.body} onChange={e => set('body', e.target.value)} />
+            </div>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button className="btn btn-ghost" onClick={onClose}>Отмена</button>
+              <button className="btn btn-primary" onClick={handleSend} disabled={!form.productName}>Отправить КП →</button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
 
 const STAGES = [
   { id: 'new',            label: 'Новый',               color: '#9CA3AF' },
@@ -48,6 +140,7 @@ export default function Negotiations({ planId }) {
   const next = PLAN_META[PLAN_META[planId]?.next]
   const [selectedNeg, setSelectedNeg] = useState(null)
   const [showMailing, setShowMailing] = useState(false)
+  const [showSendKp, setShowSendKp] = useState(false)
 
   const mailingsLabel = f.mailings === 999 ? 'безлимит' : f.mailings > 0 ? `до ${f.mailings}` : null
   const kpLabel = f.kpMonth === 999 ? 'безлимит' : f.kpMonth > 0 ? `до ${f.kpMonth}` : null
@@ -62,6 +155,7 @@ export default function Negotiations({ planId }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {showSendKp && <SendKpModal onClose={() => setShowSendKp(false)} planId={planId} />}
 
       {/* Quick actions */}
       <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 'var(--r)', padding: '16px 20px' }}>
@@ -102,6 +196,15 @@ export default function Negotiations({ planId }) {
             title={chatDesc[f.chat]}
           >
             💬 {f.chat === 'none' ? 'Чат 🔒' : f.chat === 'ai' ? 'Чат + ИИ-суфлёр' : f.chat === 'managed' ? 'Чат с менеджером' : 'Написать закупщику'}
+          </button>
+
+          {/* Send KP to network — demo communication */}
+          <button
+            className="btn btn-sm"
+            style={{ background: '#8B5CF6', color: '#fff', border: 'none' }}
+            onClick={() => setShowSendKp(true)}
+          >
+            🚀 Отправить КП в сеть
           </button>
         </div>
 

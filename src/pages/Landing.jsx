@@ -54,23 +54,23 @@ export default function Landing() {
 
             <div
               className="card card-hover"
-              style={{ ...s.pathCard, borderColor: '#E5E7EB' }}
-              onClick={() => alert('Флоу для торговых сетей в разработке')}
+              style={{ ...s.pathCard, borderColor: '#3B82F6', borderWidth: 2 }}
+              onClick={() => navigate('/buyer')}
             >
               <div style={s.pathEmoji}>🛒</div>
               <h3 style={{ fontSize: 22, fontWeight: 700, marginBottom: 10 }}>Я торговая сеть</h3>
               <p style={{ color: 'var(--text-3)', marginBottom: 24, lineHeight: 1.6 }}>
-                Ищу новых поставщиков и продукцию<br/>для расширения ассортимента.
+                Ищу новых поставщиков и продукцию для расширения ассортимента.
               </p>
               <div style={s.pathFeatures}>
-                {['Каталог верифицированных поставщиков', 'Готовые коммерческие предложения', 'Тендеры и запросы'].map(f => (
+                {['Каталог верифицированных поставщиков', 'Входящие КП от поставщиков', 'Тендеры и пред-тендеры'].map(f => (
                   <div key={f} style={s.pathFeature}>
-                    <span style={{ color: 'var(--primary)' }}>✓</span> {f}
+                    <span style={{ color: '#3B82F6' }}>✓</span> {f}
                   </div>
                 ))}
               </div>
-              <button className="btn btn-outline btn-block" style={{ marginTop: 24 }}>
-                Войти в систему →
+              <button className="btn btn-block" style={{ marginTop: 24, background: '#3B82F6', color: '#fff', border: 'none' }}>
+                Войти в кабинет закупщика →
               </button>
             </div>
           </div>
